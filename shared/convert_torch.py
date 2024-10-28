@@ -1,5 +1,6 @@
 from rknn.api import RKNN
 
+# Configs
 model_pt = '/app/shared/small_unfold_op13_256x192.pt'
 model_rknn = './small_unfold_op13_256x192.rknn'
 dataset = './data/data.txt'
