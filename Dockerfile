@@ -4,42 +4,41 @@ FROM ubuntu:20.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=UTC
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    python3.9 \
-    python3-pip \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
+# Install Python 3.6 and dependencies
+RUN apt-get update && \
+    apt-get install -y software-properties-common && \
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get update && \
+    apt-get install -y \
+    libgl1 \
+    python3.6 \
+    python3.6-dev \
+    python3.6-distutils \
     wget \
-    git \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
 
-# Set Python 3.9 as the default python
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
+# Install pip for Python 3.6
+RUN wget https://bootstrap.pypa.io/pip/3.6/get-pip.py && \
+    python3.6 get-pip.py && \
+    rm get-pip.py
 
-# Upgrade pip
-RUN python3 -m pip install --no-cache-dir --upgrade pip
-
-# Create a directory for downloads
-RUN mkdir -p /root/downloads
-
-# Copy requirements file
-COPY requirements.txt /root/downloads/
-
-# Install other Python packages
-RUN pip3 install --no-cache-dir -r /root/downloads/requirements.txt
-
-# Download RKNN Toolkit wheel file
-RUN wget https://github.com/rockchip-linux/rknn-toolkit2/raw/v1.6.0/rknn-toolkit2/packages/rknn_toolkit2-1.6.0%2B81f21f4d-cp39-cp39-linux_x86_64.whl -O /root/downloads/rknn_toolkit2-1.6.0+81f21f4d-cp39-cp39-linux_x86_64.whl
-
-# Install RKNN Toolkit
-RUN pip3 install /root/downloads/rknn_toolkit2-1.6.0+81f21f4d-cp39-cp39-linux_x86_64.whl
-
-# Clean up
-RUN rm -rf /root/downloads
-
-# Set working directory
+# Create working directory
 WORKDIR /app
 
-# Command to run when starting the container
+# Copy and install requirements
+COPY requirements.txt .
+RUN python3.6 -m pip install -r requirements.txt
+
+# Download, extract and install RKNN Toolkit
+RUN wget https://github.com/rockchip-linux/rknn-toolkit/releases/download/v1.7.0/rknn-toolkit-v1.7.0-packages.zip 
+
+RUN apt-get update && \
+    apt-get install -y gcc libffi-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN unzip rknn-toolkit-v1.7.0-packages.zip && \
+    python3.6 -m pip install packages/rknn_toolkit-1.7.0-cp36-cp36m-linux_x86_64.whl && \
+    rm -rf rknn-toolkit-v1.7.0-packages.zip packages
+
 CMD ["/bin/bash"]
